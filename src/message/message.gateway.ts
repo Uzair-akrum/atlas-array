@@ -27,14 +27,15 @@ export class MessageGateway {
   }
 
   @SubscribeMessage('joinRoom')
-  handleJoinRoom(client: Socket, [data]: any) {
+  async handleJoinRoom(client: Socket, room: any) {
+    client.join(room);
+    const usersInRoom = await this.server.in(room).fetchSockets();
     console.log(
-      '🚀 ~ file: message.gateway.ts:31 ~ MessageGateway ~ handleJoinRoom ~ client:',
-      client,
+      '🚀 ~ file: message.gateway.ts:59 ~ MessageGateway ~ newMessage ~ usersInRoom:',
+      usersInRoom,
     );
+
     try {
-      const { userId, recieverId, msg } = data;
-      client.emit('newMessage', msg);
     } catch (err) {
       console.log(
         '🚀 ~ file: message.gateway.ts:33 ~ MessageGateway ~ handleJoinRoom ~ err:',
@@ -48,16 +49,27 @@ export class MessageGateway {
     return this.messageService.findOne(id);
   }
 
-  @SubscribeMessage('newMessage')
-  newMessage(client: Socket, data: any) {
-    const { room } = data;
-    console.log(
-      '🚀 ~ file: message.gateway.ts:54 ~ MessageGateway ~ newMessage ~ room:',
-      room,
-    );
-    client.join(room);
- 
+  @SubscribeMessage('sendMesage')
+  async newMessage(client: Socket, data: any) {
+    const { room, message } = data;
 
-    this.server.emit('event', data);
+    await this.server.to(room).emit('event', message);
+  }
+  getAllRoom() {
+    const adapter = this.server.of('/').adapter;
+
+    const allRooms = Array.from(adapter.rooms.keys());
+    console.log(
+      '🚀 ~ file: message.gateway.ts:57 ~ MessageGateway ~ newMessage ~ allRooms:',
+      allRooms,
+    );
+  }
+  getUsersInRoom(io, room) {
+    const adapter = io.of('/').adapter;
+    const roomSockets = adapter.rooms.get(room) || new Set();
+    const usersInRoom = Array.from(roomSockets).map(
+      (socketId) => io.sockets.sockets.get(socketId).id,
+    );
+    return usersInRoom;
   }
 }

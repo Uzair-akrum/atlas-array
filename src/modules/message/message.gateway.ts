@@ -9,6 +9,7 @@ import { Server, Socket } from 'socket.io';
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
 import { UpdateMessageDto } from './dto/update-message.dto';
+import { MessageRepository } from './message.repository';
 
 @WebSocketGateway({
   path: '/socket.io',
@@ -50,9 +51,9 @@ export class MessageGateway {
   }
 
   @SubscribeMessage('sendMesage')
-  async newMessage(client: Socket, data: any) {
+  async sendMessage(client: Socket, data: any) {
     const { room, message } = data;
-
+    await this.messageService.create(message);
     await this.server.to(room).emit('event', message);
   }
   getAllRoom() {

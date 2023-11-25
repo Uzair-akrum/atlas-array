@@ -14,6 +14,8 @@ export class S3Controller {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file'))
   async uploadFile(@UploadedFile() file: any) {
+
+    
     const { originalname, buffer } = file;
     return await this.s3Service.uploadToS3(originalname, buffer);
   }

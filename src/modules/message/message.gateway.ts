@@ -5,11 +5,8 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-
 import { MessageService } from './message.service';
 import { CreateMessageDto } from './dto/create-message.dto';
-import { UpdateMessageDto } from './dto/update-message.dto';
-import { MessageRepository } from './message.repository';
 
 @WebSocketGateway({
   path: '/socket.io',
@@ -18,13 +15,14 @@ import { MessageRepository } from './message.repository';
   },
 })
 export class MessageGateway {
-  constructor(private readonly messageService: MessageService) {}
+  private readonly clients: Map<string, Socket> = new Map();
   @WebSocketServer()
   server: Server;
+  constructor(private readonly messageService: MessageService) {}
 
   @SubscribeMessage('createMessage')
   async create(@MessageBody() createMessageDto: CreateMessageDto) {
-    // await this.messageService.create(createMessageDto);
+    await this.messageService.create(createMessageDto);
   }
 
   @SubscribeMessage('joinRoom')
@@ -50,21 +48,40 @@ export class MessageGateway {
     return this.messageService.findOne(id);
   }
 
+  @SubscribeMessage('newMessage')
+  async newMessage(client: Socket, data: any) {
+    console.log(
+      '🚀 ~ file: message.gateway.ts:57 ~ MessageGateway ~ newMessage ~ data:',
+      data,
+    );
+  }
   @SubscribeMessage('sendMesage')
   async sendMessage(client: Socket, data: any) {
-    const { room, message } = data;
-    await this.messageService.create(message);
-    await this.server.to(room).emit('event', message);
+    const { reciever, sender, message } = data;
+    // await this.messageService.create(message);
+
+    const recievingClient = this.clients.get(reciever);
+    if (recievingClient) {
+      console.log('rhwoign');
+      recievingClient.emit('newMessage', data);
+    }
   }
   getAllRoom() {
     const adapter = this.server.of('/').adapter;
 
     const allRooms = Array.from(adapter.rooms.keys());
-    console.log(
-      '🚀 ~ file: message.gateway.ts:57 ~ MessageGateway ~ newMessage ~ allRooms:',
-      allRooms,
-    );
   }
+
+  @SubscribeMessage('intiliazeSocket')
+  intiliazeSocket(client: Socket, [data]) {
+    const { email } = data;
+    console.log(
+      '🚀 ~ file: message.gateway.ts:75 ~ MessageGateway ~ intiliazeSocket ~ email:',
+      email,
+    );
+    this.clients.set(email, client);
+  }
+
   getUsersInRoom(io, room) {
     const adapter = io.of('/').adapter;
     const roomSockets = adapter.rooms.get(room) || new Set();

@@ -10,4 +10,8 @@ export class UserRepository {
     const createdUser = await this.user.create(user);
     return createdUser;
   }
+  async getAllUsers() {
+    const users = await this.user.find();
+    return users;
+  }
 }

@@ -10,8 +10,7 @@ export class MessageService {
     return await this.messageRepo.createMessage(createMessageDto);
   }
 
-  findAll() { 
-    
+  findAll() {
     return `This action returns all message`;
   }
 

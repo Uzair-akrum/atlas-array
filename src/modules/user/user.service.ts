@@ -10,4 +10,7 @@ export class UserService {
     const createdUser = await this.userRepo.createUser(user);
     return createdUser;
   }
+  async getAllUsers() {
+    return this.userRepo.getAllUsers();
+  } 
 }
